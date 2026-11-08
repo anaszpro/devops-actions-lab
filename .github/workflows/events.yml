@@ -1,0 +1,52 @@
+name: Repository events and contexts
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+    branches: [main, dev]
+
+permissions:
+  contents: read
+
+env:
+  LAB_STAGE: hands-on
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Print selected contexts
+        env:
+          ACTOR: ${{ github.actor }}
+          EVENT_NAME: ${{ github.event_name }}
+          RUNNER_OS: ${{ runner.os }}
+          CONFIG_GREETING: ${{ vars.LAB_GREETING || 'Variable not configured yet' }}
+          STAGE: ${{ env.LAB_STAGE }}
+        run: |
+          printf 'github.actor=%s\n' "$ACTOR"
+          printf 'github.event_name=%s\n' "$EVENT_NAME"
+          printf 'runner.os=%s\n' "$RUNNER_OS"
+          printf 'vars.LAB_GREETING=%s\n' "$CONFIG_GREETING"
+          printf 'env.LAB_STAGE=%s\n' "$STAGE"
+      - name: Match a dev branch
+        if: contains(github.ref, '/dev') || contains(github.head_ref, 'dev')
+        run: echo "The dev branch condition matched."
+      - name: Report success
+        if: success()
+        run: echo "Previous steps succeeded."
+      - name: Report failure
+        if: failure()
+        run: echo "A previous step failed."
+      - name: Finish context inspection
+        if: always()
+        run: echo "The final step runs regardless of previous results."
+  summary:
+    needs: inspect
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "This job ran after the inspect job."

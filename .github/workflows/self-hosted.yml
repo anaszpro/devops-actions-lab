@@ -1,0 +1,18 @@
+name: Self hosted runner
+
+on: workflow_dispatch
+
+permissions: {}
+
+jobs:
+  smoke:
+    runs-on: [self-hosted, devops-lab]
+    timeout-minutes: 5
+    steps:
+      - name: Identify the runner
+        env:
+          RUNNER_LABEL_NAME: ${{ runner.name }}
+          RUNNER_OS_NAME: ${{ runner.os }}
+        run: |
+          printf 'Runner: %s\nOS: %s\n' "$RUNNER_LABEL_NAME" "$RUNNER_OS_NAME"
+          uname -a

@@ -1,0 +1,68 @@
+name: Matrix cache and Redis
+
+on: workflow_dispatch
+
+permissions:
+  contents: read
+
+jobs:
+  matrix-test:
+    name: ${{ matrix.os }} / Node ${{ matrix.node }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        node: [22, 24]
+    env:
+      npm_config_cache: ${{ github.workspace }}/.npm-cache
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+          package-manager-cache: false
+      - name: Restore or save npm cache
+        id: cache
+        uses: actions/cache@v5
+        with:
+          path: .npm-cache
+          key: npm-${{ runner.os }}-node${{ matrix.node }}-${{ hashFiles('package-lock.json') }}
+      - name: Report cache hit
+        env:
+          CACHE_HIT: ${{ steps.cache.outputs.cache-hit || 'false' }}
+        run: echo "Cache hit = $env:CACHE_HIT"
+        shell: pwsh
+      - name: Install and test
+        run: |
+          node --version
+          npm ci
+          npm test
+  redis:
+    name: Redis integration
+    runs-on: ubuntu-latest
+    services:
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379/tcp
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
+    steps:
+      - name: Inspect the Redis container and query its published port
+        env:
+          REDIS_CONTAINER: ${{ job.services.redis.id }}
+          REDIS_PORT: ${{ job.services.redis.ports['6379'] }}
+        run: |
+          printf 'Container ID: %s\n' "$REDIS_CONTAINER"
+          docker port "$REDIS_CONTAINER" 6379/tcp
+          exec 3<>"/dev/tcp/127.0.0.1/$REDIS_PORT"
+          printf 'PING\r\n' >&3
+          IFS= read -r reply <&3
+          test "$reply" = $'+PONG\r'
+          printf 'Redis PING on 127.0.0.1:%s returned PONG\n' "$REDIS_PORT"

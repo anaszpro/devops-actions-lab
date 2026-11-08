@@ -1,0 +1,33 @@
+name: Manual dispatch
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: Person to greet
+        required: true
+        type: string
+      greeting:
+        description: Greeting text
+        required: true
+        default: Hello
+        type: string
+      data:
+        description: Non-sensitive label for this run
+        required: true
+        default: browser
+        type: string
+
+permissions: {}
+
+jobs:
+  greet:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print manual inputs
+        env:
+          RECIPIENT: ${{ inputs.name }}
+          GREETING: ${{ inputs.greeting }}
+          DATA: ${{ inputs.data }}
+        run: |
+          printf '%s, %s!\nData: %s\n' "$GREETING" "$RECIPIENT" "$DATA"

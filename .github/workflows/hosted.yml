@@ -1,0 +1,31 @@
+name: GitHub hosted runners
+
+on: workflow_dispatch
+
+permissions: {}
+
+jobs:
+  ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show Ubuntu version
+        run: cat /etc/os-release
+  windows:
+    runs-on: windows-latest
+    steps:
+      - name: Show Windows version and run Chocolatey
+        shell: pwsh
+        run: |
+          Get-CimInstance Win32_OperatingSystem | Format-List Caption, Version
+          choco --version
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+  macos:
+    runs-on: macos-latest
+    steps:
+      - name: Show macOS version and compile Swift
+        run: |
+          sw_vers
+          swiftc --version
+          printf '%s\n' 'print("Swift build passed")' > Hello.swift
+          swiftc Hello.swift -o hello
+          ./hello

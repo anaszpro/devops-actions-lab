@@ -1,0 +1,19 @@
+name: Scheduled cron
+
+on:
+  schedule:
+    - cron: '2-57/5 * * * *'
+
+permissions: {}
+
+jobs:
+  report-time:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Show schedule and UTC time
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          CRON: ${{ github.event.schedule }}
+        run: |
+          printf 'Event: %s\nCron: %s\n' "$EVENT_NAME" "$CRON"
+          date -u

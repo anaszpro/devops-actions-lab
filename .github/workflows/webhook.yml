@@ -1,0 +1,21 @@
+name: External dispatch
+
+on:
+  repository_dispatch:
+    types: [custom-webhook]
+
+permissions: {}
+
+jobs:
+  webhook:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Verify webhook event and payload
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_TYPE: ${{ github.event.action }}
+          MESSAGE: ${{ github.event.client_payload.message }}
+        run: |
+          test "$EVENT_TYPE" = custom-webhook
+          test -n "$MESSAGE"
+          printf 'Event: %s\nType: %s\nMessage: %s\n' "$EVENT_NAME" "$EVENT_TYPE" "$MESSAGE"
